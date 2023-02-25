@@ -32,6 +32,20 @@ const recipientColumnHandler = {
   isDummy(row) { return (this.win.gDBView.getFlagsAt(row) & MSG_VIEW_FLAG_DUMMY) != 0; }
 };
 
+/* new column for sender TLD */
+const senderTLDColumnHandler = {
+  init(win) { this.win = win; },
+  getCellText(row, col) { return this.isDummy(row) ? "" : this.getAddress(this.win.gDBView.getMsgHdrAt(row)); },
+  getSortStringForRow(hdr) { return this.getAddress(hdr); },
+  isString() { return true; },
+  getCellProperties(row, col, props) {},
+  getRowProperties(row, props) {},
+  getImageSrc(row, col) { return null; },
+  getSortLongForRow(hdr) { return 0; },
+  getAddress(aHeader) { return aHeader.author.replace(/.*</, "").replace(/>.*/, ""); },
+  isDummy(row) { return (this.win.gDBView.getFlagsAt(row) & MSG_VIEW_FLAG_DUMMY) != 0; }
+};
+
 const columnOverlay = {
   init(win) {
     this.win = win;
@@ -47,6 +61,7 @@ const columnOverlay = {
       senderColumnHandler.init(this.win);
       recipientColumnHandler.init(this.win);
       this.win.gDBView.addColumnHandler("senderAddressColumn", senderColumnHandler);
+      this.win.gDBView.addColumnHandler("senderAddressTLDColumn", senderTLDColumnHandler);      
       this.win.gDBView.addColumnHandler("recipientAddressColumn", recipientColumnHandler);
     } catch (ex) {
       console.error(ex);
@@ -60,6 +75,7 @@ const columnOverlay = {
     const treeCol = win.document.createXULElement("treecol");
     treeCol.setAttribute("id", columnId);
     treeCol.setAttribute("persist", "hidden ordinal sortDirection width");
+    /* the below may need to be 3 */
     treeCol.setAttribute("flex", "2");
     treeCol.setAttribute("closemenu", "none");
     treeCol.setAttribute("label", columnLabel);
@@ -88,6 +104,7 @@ const columnOverlay = {
 
   addColumns(win) {
     this.addColumn(win, "senderAddressColumn", "Sender (@)");
+    this.addColumn(win, "senderAddressTLDColumn", "SenderTLD (@)");
     this.addColumn(win, "recipientAddressColumn", "Recipient (@)");
   },
 
@@ -99,6 +116,7 @@ const columnOverlay = {
 
   destroyColumns() {
     this.destroyColumn("senderAddressColumn");
+    this.destroyColumn("senderAddressTLDColumn");
     this.destroyColumn("recipientAddressColumn");
     Services.obs.removeObserver(this, "MsgCreateDBView");
   },
